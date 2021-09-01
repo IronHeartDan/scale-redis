@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="main.css" />
+    <script src="/socket.io/socket.io.js"></script>
+    <script defer>
+      var socket;
+      window.onload = ()=>{
+        
+        let username = prompt("Enter UserName");
+         socket = io(`/?username=${username}`);
+      // socket.on("id", (appId) => {
+      //   alert(appId);
+      // });
+      socket.on("count", (count) => {
+        let countCon = document.getElementById("count");
+        countCon.innerHTML = `Connected CLients : ${count}`;
+      });
+      socket.on("msg", (msg) => {
+        let chats = document.getElementById("chats");
+        chats.innerHTML += `<div class='leftMsg'>${msg}</div>`;
+      });
+
+      socket.on("err",()=>{
+        alert("User not Found!!");
+      });
+      }
+      
+
+      
+      function send() {
+        let msg = document.getElementById("text").value;
+        if (msg.length > 0) {
+          socket.emit("msg", msg);
+          let chats = document.getElementById("chats");
+          chats.innerHTML += `<div class='RightMsg'>${msg}</div>`;
+          document.getElementById("text").value = "";
+        } else {
+          alert("Please Enter A Message!!!");
+        }
+      }
+
+      function sendPrivateMsg() {
+        let msg = document.getElementById("text").value;
+        let whome = prompt("To Whome:::>>>>>");
+        if (msg.length > 0) {
+          socket.emit("privateMsg", {"whome":whome,"msg":msg});
+          let chats = document.getElementById("chats");
+          chats.innerHTML += `<div class='RightMsg'>${msg}</div>`;
+          document.getElementById("text").value = "";
+        } else {
+          alert("Please Enter A Message!!!");
+        }
+      }
+    </script>
+    <title>Scale-Socket</title>
+  </head>
+  <body>
+    <div id="chatBox">
+      <div id="chatInfo">
+        <h1>Lets-Talk</h1>
+        <span id="count"></span>
+      </div>
+      <div id="chats"></div>
+      <div id="input">
+        <input type="text" id="text" placeholder="Type Here..." />
+        <button onclick="send()">Send</button>
+        <button onclick="sendPrivateMsg()">Send Private Msg</button>
+      </div>
+    </div>
+  </body>
+</html>
