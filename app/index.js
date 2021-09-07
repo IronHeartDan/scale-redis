@@ -3,12 +3,12 @@ const app = express();
 const server = require("http").createServer(app);
 const port = process.env.PORT || 3000;
 const redis = require("redis");
-const client = redis.createClient(6379, "192.168.137.204");
+const client = redis.createClient(6379, "192.168.0.103");
 
 // Scaling With Sockets
 const io = require("socket.io")(server);
 const redisAdapter = require("socket.io-redis");
-io.adapter(redisAdapter({ host: "192.168.137.204", port: 6379 }));
+io.adapter(redisAdapter({ host: "192.168.0.103", port: 6379 }));
 
 app.use(express.static("public"));
 
@@ -18,6 +18,9 @@ app.get("/", (req, res) => {
 
 io.on("connection", async (socket) => {
   let username = socket.handshake.query.username;
+  socket.join(username);
+  socket.to(username).emit("isOnline",{"who":username,"online":true});
+  
   client.set(username, socket.id);
   client.get("count", (err, data) => {
     if (data == null) {
@@ -49,6 +52,23 @@ io.on("connection", async (socket) => {
     });
   });
 
+  socket.on("getPresence",ofWhome=>{
+    client.get(ofWhome, (err, data) => {
+      if (data) {
+        socket.emit("isOnline",{"who":ofWhome,"online":true});
+        socket.join(ofWhome);
+      } else {
+        socket.emit("err");
+      }
+    });
+  });
+
+
+  socket.on("disconnecting", () => {
+    let who = socket.handshake.query.username;
+    socket.to(who).emit("isOnline",{"who":who,"online":false});
+  });
+
   socket.on("disconnect", () => {
     let username = socket.handshake.query.username;
     client.del(username);
@@ -58,10 +78,6 @@ io.on("connection", async (socket) => {
       // console.log(`Total Clients : ${data}`);
       io.emit("count", data);
     });
-
-    // count--;
-    // io.emit("count", count);
-    // console.log(socket.id + " Is Disconnected");
   });
 });
 

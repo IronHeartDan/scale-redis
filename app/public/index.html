@@ -9,7 +9,7 @@
     <script defer>
       var socket;
       window.onload = ()=>{
-        
+        const onlineUsers = new Map();
         let username = prompt("Enter UserName");
          socket = io(`/?username=${username}`);
       // socket.on("id", (appId) => {
@@ -23,6 +23,22 @@
         let chats = document.getElementById("chats");
         chats.innerHTML += `<div class='leftMsg'>${msg}</div>`;
       });
+
+      socket.on("isOnline",data=>{
+          onlineUsers.set(data.who,data.online);
+          updateUI();
+      });
+
+      function updateUI(){
+        let listElement = document.getElementById("users");
+        listElement.innerHTML = "";
+        onlineUsers.forEach((data,who)=>{
+          // console.log(who,data);
+          let ele = document.createElement("div");
+          ele.innerHTML = `${who} is ${data ? 'online' : 'offline'}`;
+          listElement.appendChild(ele);
+        });
+      }
 
       socket.on("err",()=>{
         alert("User not Found!!");
@@ -55,6 +71,13 @@
           alert("Please Enter A Message!!!");
         }
       }
+
+      function getPresence(){
+        let friend = document.getElementById("friend").value;
+        socket.emit("getPresence",friend);
+      }
+
+
     </script>
     <title>Scale-Socket</title>
   </head>
@@ -69,6 +92,15 @@
         <input type="text" id="text" placeholder="Type Here..." />
         <button onclick="send()">Send</button>
         <button onclick="sendPrivateMsg()">Send Private Msg</button>
+      </div>
+    </div>
+    <div id="usersCon">
+      <div class="input">
+        <input type="text" id="friend" placeholder="Enter Friend Username"/>
+        <button onclick="getPresence()">Get Presence</button>
+      </div>
+      <div id="users">
+
       </div>
     </div>
   </body>
